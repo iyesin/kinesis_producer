@@ -16,7 +16,7 @@ class RecordAccumulator(object):
     def try_append(self, record):
         """Attempt to accumulate a record. Return False if buffer is full."""
         success = self._buffer.try_append(record)
-        if success:
+        if success and self._buffer_started_at is None:
             self._buffer_started_at = time.time()
         return success
 
