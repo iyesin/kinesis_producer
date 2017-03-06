@@ -9,12 +9,11 @@ log = logging.getLogger(__name__)
 class Sender(threading.Thread):
     """I/O thread accumulating records and flushing to client."""
 
-    def __init__(self, queue, accumulator, client, partitioner):
+    def __init__(self, queue, accumulator, client):
         super(Sender, self).__init__()
         self.queue = queue
         self._accumulator = accumulator
         self._client = client
-        self._partitioner = partitioner
         self._running = True
         self._closed = threading.Event()
 
@@ -65,11 +64,10 @@ class Sender(threading.Thread):
 
     def flush(self):
         """Get the record by flushing the accumulator and send it to client."""
-        record_data = self._accumulator.flush()
-        if record_data:
-            log.debug('Flushing to client (length: %i)', len(record_data))
-            record = (record_data, self._partitioner(record_data))
-            self._client.put_record(record)
+        records = self._accumulator.flush()
+        if len(records) > 0:
+            log.debug('Flushing to client (length: %i)', len(records))
+            self._client.put_records(records)
 
     def close(self):
         log.debug("Closing kinesis producer I/O thread")

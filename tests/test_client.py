@@ -30,8 +30,11 @@ def test_send_record(kinesis):
     }
     client = Client(config)
 
-    record = (b'data', 'part')
-    client.put_record(record)
+    record = {
+        'Data': b'data',
+        'PartitionKey': 'part'
+    }
+    client.put_records([record])
 
     records = kinesis.read_records_from_stream()
 
@@ -43,12 +46,15 @@ def test_send_record(kinesis):
 def test_send_records_handle_error(config, kinesis):
     client = Client(config)
 
-    record = (b'data', 'part1')
+    record = {
+        'Data': b'data',
+        'PartitionKey': 'part1'
+    }
 
     with mock.patch.object(client, 'connection') as m_conn:
-        m_conn.put_record.side_effect = Exception()
+        m_conn.put_records.side_effect = Exception()
 
-        client.put_record(record)
+        client.put_records([record])
 
 
 def test_retry_logic_call():
@@ -114,8 +120,11 @@ def test_threadpool_send_record(kinesis):
     client = ThreadPoolClient(config)
 
     for data in TEST_DATA:
-        record = (data, 'part')
-        client.put_record(record)
+        record = {
+            'Data': data,
+            'PartitionKey': 'part'
+        }
+        client.put_records([record])
 
     client.close()
     client.join()
@@ -136,8 +145,11 @@ def test_threadpool_async(kinesis):
     client = ThreadPoolClient(config)
 
     for data in TEST_DATA:
-        record = (data, 'part')
-        client.put_record(record)
+        record = {
+            'Data': data,
+            'PartitionKey': 'part'
+        }
+        client.put_records([record])
 
     time.sleep(1)
 

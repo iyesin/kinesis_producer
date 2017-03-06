@@ -37,6 +37,58 @@ def call_and_retry(boto_function, max_retries, **kwargs):
             else:
                 raise exc
 
+def call_and_retry_put_records(boto_function, max_retries, **kwargs):
+    """Retry Logic for put_records boto call.
+
+    This code follows the exponetial backoff pattern suggested by
+    http://docs.aws.amazon.com/general/latest/gr/api-retries.html
+    """
+    retries = 0
+    while True:
+        if retries:
+            log.warning('Retrying (%i) %s', retries, boto_function)
+
+        records = kwargs['Records']
+        resp = boto_function(**kwargs)
+        if resp[u'FailedRecordCount'] > 0:
+            failed_records = _get_failed_record_responses(resp)
+        else:
+            return resp
+        if len(failed_records) > 0:
+            if retries >= max_retries:
+                raise Exception("Could not send all Kinesis records")
+            if _exceeded_throughput(failed_records):
+                time.sleep(2 ** retries * .1)
+                retries += 1
+                records = _get_failed_original_records(records, failed_records)
+                kwargs['Records'] = records
+            else:
+                # TODO better exception raised here
+                exc = failed_records[0]
+                raise Exception("{}: {}".format(exc['ErrorCode'],
+                                                exc['ErrorMessage']))
+
+def _get_failed_record_responses(resp):
+    return [
+        # the record object might not contain the actual record
+        # data and just have AWS info instead. Store the index that
+        # failed, too.
+        (i, record) for (i, record)
+        in enumerate(resp[u'Records'])
+        if record.has_key('ErrorCode')
+    ]
+
+
+def _exceeded_throughput(failed_records):
+    for i, record_resp in failed_records:
+        if record_resp['ErrorCode'] == 'ProvisionedThroughputExceededException':
+            return True
+
+def _get_failed_original_records(original_records, failed_records):
+    new_records = []
+    for i, record_resp in failed_records:
+        new_records.append(original_records(i))
+    return original_records
 
 class Client(object):
     """Synchronous Kinesis client."""
@@ -46,18 +98,17 @@ class Client(object):
         self.max_retries = config['kinesis_max_retries']
         self.connection = get_connection(config['aws_region'])
 
-    def put_record(self, record):
+    def put_records(self, records):
         """Send records to Kinesis API.
 
-        Records is a list of tuple like (data, partition_key).
+        Records is a list of dictionaries like {'Data': data, 'PartitionKey': partition_key}.
         """
-        data, partition_key = record
-
-        log.debug('Sending record: %s', data[:100])
+        log.debug('Sending record: %s', records[:100])
         try:
-            call_and_retry(self.connection.put_record, self.max_retries,
-                           StreamName=self.stream, Data=data,
-                           PartitionKey=partition_key)
+            call_and_retry_put_records(self.connection.put_records,
+                           self.max_retries,
+                           StreamName=self.stream,
+                           Records=records)
         except:
             log.exception('Failed to send records to Kinesis')
 
@@ -75,8 +126,8 @@ class ThreadPoolClient(Client):
         super(ThreadPoolClient, self).__init__(config)
         self.pool = ThreadPool(processes=config['kinesis_concurrency'])
 
-    def put_record(self, records):
-        task_func = super(ThreadPoolClient, self).put_record
+    def put_records(self, records):
+        task_func = super(ThreadPoolClient, self).put_records
         self.pool.apply_async(task_func, args=[records])
 
     def close(self):

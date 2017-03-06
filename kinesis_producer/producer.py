@@ -7,8 +7,8 @@ from .sender import Sender
 from .accumulator import RecordAccumulator
 from .buffer import RawBuffer
 from .client import Client, ThreadPoolClient
-from .partitioner import random_partitioner
 from .constants import KINESIS_RECORD_MAX_SIZE
+from .partitioner import random_partitioner
 
 log = logging.getLogger(__name__)
 
@@ -22,15 +22,16 @@ class KinesisProducer(object):
         self._queue = queue.Queue()
         self._closed = False
 
-        accumulator = RecordAccumulator(RawBuffer, config)
+        accumulator = RecordAccumulator(RawBuffer,
+                                        config,
+                                        random_partitioner)
         if config['kinesis_concurrency'] == 1:
             client = Client(config)
         else:
             client = ThreadPoolClient(config)
         self._sender = Sender(queue=self._queue,
                               accumulator=accumulator,
-                              client=client,
-                              partitioner=random_partitioner)
+                              client=client)
         self._sender.daemon = True
         self._sender.start()
 
@@ -44,7 +45,7 @@ class KinesisProducer(object):
         if not isinstance(record, six.binary_type):
             raise ValueError("Record must be bytes type")
 
-        record_size = len(record) + len(self.config['record_delimiter'])
+        record_size = len(record)
         if record_size > KINESIS_RECORD_MAX_SIZE:
             raise ValueError("Record is larger than max record size")
 

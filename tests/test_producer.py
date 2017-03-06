@@ -43,7 +43,7 @@ def test_send_record_immediate(kinesis, config):
 
     records = kinesis.read_records_from_stream()
     assert len(records) == 1
-    assert records[0]['Data'] == b'-' * 200 + b'\n'
+    assert records[0]['Data'] == b'-' * 200
 
     c.close()
     c.join()
@@ -61,7 +61,7 @@ def test_send_record_linger(kinesis, config):
 
     records = kinesis.read_records_from_stream()
     assert len(records) == 1
-    assert records[0]['Data'] == b'-' * 50 + b'\n'
+    assert records[0]['Data'] == b'-' * 50
 
     c.close()
     c.join()
@@ -75,7 +75,7 @@ def test_records_are_not_lost(kinesis, config):
 
     records = kinesis.read_records_from_stream()
     assert len(records) == 1
-    assert records[0]['Data'] == b'-\n'
+    assert records[0]['Data'] == b'-'
 
 
 def test_send_with_threadpool_client(kinesis, config):
@@ -87,4 +87,4 @@ def test_send_with_threadpool_client(kinesis, config):
 
     records = kinesis.read_records_from_stream()
     assert len(records) == 1
-    assert records[0]['Data'] == b'-\n'
+    assert records[0]['Data'] == b'-'

@@ -3,8 +3,9 @@ import time
 
 class RecordAccumulator(object):
 
-    def __init__(self, buffer_class, config):
+    def __init__(self, buffer_class, config, partitioner):
         self.config = config
+        self.partitioner = partitioner
         self.buffer_time_limit = config['buffer_time_limit']
         self._buffer_class = buffer_class
         self._reset_buffer()
@@ -13,9 +14,11 @@ class RecordAccumulator(object):
         self._buffer = self._buffer_class(config=self.config)
         self._buffer_started_at = None
 
-    def try_append(self, record):
+    def try_append(self, record, partition_key=None):
         """Attempt to accumulate a record. Return False if buffer is full."""
-        success = self._buffer.try_append(record)
+        if partition_key is None:
+            partition_key = self.partitioner(record)
+        success = self._buffer.try_append(record, partition_key)
         if success and self._buffer_started_at is None:
             self._buffer_started_at = time.time()
         return success
@@ -38,7 +41,7 @@ class RecordAccumulator(object):
     def flush(self):
         """Close the buffer and return it."""
         if self._buffer_started_at is None:
-            return
+            return []
         buf = self._buffer.flush()
         self._reset_buffer()
         return buf

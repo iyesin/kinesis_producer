@@ -16,7 +16,6 @@ config = dict(
     buffer_time_limit=0.2,
     kinesis_concurrency=4,
     kinesis_max_retries=10,
-    record_delimiter='\n',
     stream_name='jz-python-devlocal',
     )
 
