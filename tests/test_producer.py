@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import time
 
 import pytest
@@ -14,6 +16,18 @@ def test_close(kinesis, config):
     c.close()
     c.join()
 
+
+def test_send_unicode(kinesis, config):
+    c = KinesisProducer(config)
+
+    utf8_str = "hi猫"
+    c.send(utf8_str)
+
+    utf8_str = u"hi"
+    c.send(utf8_str)
+
+    c.close()
+    c.join()
 
 def test_send_invalid_record(kinesis, config):
     c = KinesisProducer(config)

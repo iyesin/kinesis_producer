@@ -42,6 +42,9 @@ class KinesisProducer(object):
         """
         assert not self._closed, "KinesisProducer closed but called anyway"
 
+        if isinstance(record, unicode):
+            record = record.encode('utf-8')
+
         if not isinstance(record, six.binary_type):
             raise ValueError("Record must be bytes type")
 
