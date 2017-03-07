@@ -42,6 +42,7 @@ def test_append_timeout():
     acc = RecordAccumulator(RawBuffer, CONFIG)
     acc.try_append(b'-')
     time.sleep(0.2)
+    acc.try_append(b'-')
     assert acc.is_ready()
 
     acc.flush()
