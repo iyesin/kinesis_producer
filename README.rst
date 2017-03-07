@@ -42,7 +42,6 @@ Send records aggregated up to 100KB, 200ms and joined with '\\n':
        buffer_time_limit=0.2,
        kinesis_concurrency=1,
        kinesis_max_retries=10,
-       record_delimiter='\n',
        stream_name='KINESIS_STREAM_NAME',
        )
 
@@ -70,7 +69,6 @@ Config
    Number of Kinesis put_records call attempt before giving up.
    This number should be between 4 and 10 if you want to handle
    temporary ProvisionedThroughputExceeded errors.
-:record_delimiter: Delimiter for record aggregation
 :stream_name: Name of the Kinesis Stream
 
 

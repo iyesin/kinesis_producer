@@ -15,7 +15,6 @@ def config():
         buffer_time_limit=0.2,
         kinesis_concurrency=1,
         kinesis_max_retries=3,
-        record_delimiter=b'\n',
         stream_name=TEST_STREAM_NAME,
     )
     return config
