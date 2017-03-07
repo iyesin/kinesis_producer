@@ -16,15 +16,15 @@ log = logging.getLogger(__name__)
 class KinesisProducer(object):
     """A Kinesis client that publishes records to a Kinesis stream."""
 
-    def __init__(self, config):
+    def __init__(self, config, partitioner=random_partitioner):
         log.debug('Starting KinesisProducer')
         self.config = config
         self._queue = queue.Queue()
         self._closed = False
+        self._partitioner = partitioner
 
         accumulator = RecordAccumulator(RawBuffer,
-                                        config,
-                                        random_partitioner)
+                                        config)
         if config['kinesis_concurrency'] == 1:
             client = Client(config)
         else:
@@ -35,7 +35,7 @@ class KinesisProducer(object):
         self._sender.daemon = True
         self._sender.start()
 
-    def send(self, record):
+    def send(self, record, partition_key=None):
         """Publish a record to Kinesis.
 
         Don't block. Record must be bytes type.
@@ -52,7 +52,9 @@ class KinesisProducer(object):
         if record_size > KINESIS_RECORD_MAX_SIZE:
             raise ValueError("Record is larger than max record size")
 
-        self._queue.put(record)
+        if partition_key is None:
+            partition_key = self._partitioner(record)
+        self._queue.put((record, partition_key))
 
     def close(self):
         if self._closed:

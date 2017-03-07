@@ -44,14 +44,14 @@ class Sender(threading.Thread):
     def run_once(self):
         """Accumulate records and flush when accumulator is ready."""
         try:
-            record = self.queue.get(timeout=0.05)
+            (record, partition_key) = self.queue.get(timeout=0.05)
         except queue.Empty:
-            record = None
+            record, partition_key = None, None
         else:
-            success = self._accumulator.try_append(record)
+            success = self._accumulator.try_append(record, partition_key)
             if not success:
                 self.flush()
-                success = self._accumulator.try_append(record)
+                success = self._accumulator.try_append(record, partition_key)
                 assert success, "Failed to accumulate even after flushing"
 
             self.queue.task_done()
