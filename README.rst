@@ -43,7 +43,9 @@ Send records aggregated up to 100KB, 200ms and joined with '\\n':
        kinesis_concurrency=1,
        kinesis_max_retries=10,
        stream_name='KINESIS_STREAM_NAME',
-       )
+       aws_access_key_id='ID_KEY_STRING', # this is optional
+       aws_secret_access_key='SECRET_KEY_STRING', # this is optional
+   )
 
    k = KinesisProducer(config=config)
 

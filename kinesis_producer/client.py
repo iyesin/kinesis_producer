@@ -8,11 +8,20 @@ import botocore
 log = logging.getLogger(__name__)
 
 
-def get_connection(aws_region):
+def get_connection(aws_region,
+                   aws_access_key_id=None,
+                   aws_secret_access_key=None):
     session = boto3.session.Session()
-    connection = session.client('kinesis', region_name=aws_region)
-    return connection
+    kwargs = {
+        'region_name': aws_region
+    }
+    if aws_access_key_id is not None:
+        kwargs['aws_access_key_id'] = aws_access_key_id
+    if aws_secret_access_key is not None:
+        kwargs['aws_secret_access_key'] = aws_secret_access_key
 
+    connection = session.client('kinesis', **kwargs)
+    return connection
 
 def call_and_retry(boto_function, max_retries, **kwargs):
     """Retry Logic for generic boto client calls.
@@ -96,7 +105,11 @@ class Client(object):
     def __init__(self, config):
         self.stream = config['stream_name']
         self.max_retries = config['kinesis_max_retries']
-        self.connection = get_connection(config['aws_region'])
+        self.connection = get_connection(
+            config['aws_region'],
+            aws_access_key_id=config.get('aws_access_key_id', None),
+            aws_secret_access_key=config.get('aws_secret_access_key', None),
+        )
 
     def put_records(self, records):
         """Send records to Kinesis API.
