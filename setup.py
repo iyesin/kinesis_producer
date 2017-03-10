@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='kinesis_producer',
-    version='0.4.0',
+    version='0.4.0+acrobatiq',
     description='Producer for AWS Kinesis Stream with record aggregation',
     long_description=open('README.rst').read(),
     keywords='kinesis kafka producer client',
@@ -31,7 +31,7 @@ setup(
             ],
         },
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
