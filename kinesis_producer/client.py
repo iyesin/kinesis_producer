@@ -96,7 +96,7 @@ def _exceeded_throughput(failed_records):
 def _get_failed_original_records(original_records, failed_records):
     new_records = []
     for i, record_resp in failed_records:
-        new_records.append(original_records(i))
+        new_records.append(original_records[i])
     return original_records
 
 class Client(object):
