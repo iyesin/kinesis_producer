@@ -73,7 +73,8 @@ def call_and_retry_put_records(boto_function, max_retries, **kwargs):
                 kwargs['Records'] = records
             else:
                 # TODO better exception raised here
-                exc = failed_records[0]
+                # Each failed record is a (index, record) tuple, so get the record value.
+                exc = failed_records[0][1]
                 raise Exception("{}: {}".format(exc['ErrorCode'],
                                                 exc['ErrorMessage']))
 
