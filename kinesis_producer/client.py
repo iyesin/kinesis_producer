@@ -66,13 +66,13 @@ def call_and_retry_put_records(boto_function, max_retries, **kwargs):
         if len(failed_records) > 0:
             if retries >= max_retries:
                 raise Exception("Could not send all Kinesis records")
-            if _exceeded_throughput(failed_records):
+            if (_exceeded_throughput(failed_records) or
+                _internal_failure_response(failed_records)):
                 time.sleep(2 ** retries * .1)
                 retries += 1
                 records = _get_failed_original_records(records, failed_records)
                 kwargs['Records'] = records
             else:
-                # TODO better exception raised here
                 # Each failed record is a (index, record) tuple, so get the record value.
                 exc = failed_records[0][1]
                 raise Exception("{}: {}".format(exc['ErrorCode'],
@@ -93,6 +93,13 @@ def _exceeded_throughput(failed_records):
     for i, record_resp in failed_records:
         if record_resp['ErrorCode'] == 'ProvisionedThroughputExceededException':
             return True
+    return False
+
+def _internal_failure_response(failed_records):
+    for i, record_resp in failed_records:
+        if record_resp['ErrorCode'] == 'InternalFailure':
+            return True
+    return False
 
 def _get_failed_original_records(original_records, failed_records):
     new_records = []
